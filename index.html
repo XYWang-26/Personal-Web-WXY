@@ -181,9 +181,232 @@
             40% { content: '..'; }
             60% { content: '...'; }
         }
+
+        /* Starry River opening experience */
+        body.starry-lock {
+            overflow: hidden;
+        }
+        .starry-experience {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            min-height: 100dvh;
+            overflow: hidden;
+            isolation: isolate;
+            background: #071426;
+        }
+        .starry-scene {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+        }
+        .starry-opening {
+            z-index: 1;
+            background: #071426 url("01 星月夜融合.png") center / cover no-repeat;
+            opacity: 1;
+            transform: scale(1);
+            transition:
+                opacity 1.8s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 2.8s cubic-bezier(0.22, 1, 0.36, 1),
+                filter 2.4s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .starry-opening-video,
+        .starry-river-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .starry-opening-video {
+            display: block;
+            transform: scale(1.018);
+            animation: starry-breathe 18s ease-in-out infinite alternate;
+        }
+        .starry-splat-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.64;
+            mix-blend-mode: screen;
+            transition: opacity 1.2s ease;
+        }
+        .starry-experience.is-webgl-splat .starry-opening-video {
+            opacity: 0.34;
+            filter: blur(0.8px) saturate(1.06) brightness(0.9);
+        }
+        .starry-experience.is-webgl-splat .starry-splat-canvas {
+            opacity: 1;
+            mix-blend-mode: normal;
+        }
+        .starry-atmosphere {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 68% 24%, rgba(255, 204, 103, 0.08), transparent 19%),
+                radial-gradient(circle at 51% 45%, transparent 31%, rgba(2, 10, 24, 0.16) 78%),
+                linear-gradient(to bottom, rgba(4, 18, 43, 0.05), rgba(3, 11, 24, 0.22));
+            box-shadow: inset 0 0 10rem rgba(2, 8, 19, 0.38);
+        }
+        .starry-enter {
+            position: absolute;
+            inset: 0;
+            z-index: 4;
+            width: 100%;
+            border: 0;
+            padding: 0;
+            color: rgba(246, 241, 222, 0.74);
+            background: transparent;
+            cursor: pointer;
+        }
+        .starry-enter:focus-visible {
+            outline: 2px solid rgba(255, 205, 112, 0.92);
+            outline-offset: -8px;
+        }
+        .starry-enter-hint {
+            position: absolute;
+            right: clamp(1.25rem, 3vw, 3rem);
+            bottom: clamp(1.5rem, 4vw, 3.5rem);
+            font-size: 0.64rem;
+            font-weight: 500;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            text-shadow: 0 2px 18px rgba(3, 9, 22, 0.8);
+            opacity: 0;
+            animation: starry-hint-in 1.3s 1.2s ease forwards;
+        }
+        .starry-river {
+            z-index: 2;
+            opacity: 0;
+            transform: scale(1.09);
+            filter: brightness(0.64) blur(5px);
+            pointer-events: none;
+            transition:
+                opacity 2.5s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 3s cubic-bezier(0.22, 1, 0.36, 1),
+                filter 2.5s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .starry-river::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 51% 69%, rgba(255, 184, 81, 0.08), transparent 28%),
+                linear-gradient(to bottom, rgba(4, 14, 35, 0.08), rgba(3, 9, 22, 0.18));
+            box-shadow: inset 0 0 9rem rgba(2, 8, 19, 0.3);
+        }
+        .starry-transition-title {
+            position: absolute;
+            z-index: 5;
+            left: 50%;
+            top: 50%;
+            margin: 0;
+            color: rgba(255, 248, 226, 0.94);
+            font-size: clamp(1.25rem, 2.5vw, 2.3rem);
+            font-weight: 400;
+            letter-spacing: -0.02em;
+            text-shadow: 0 3px 28px rgba(2, 8, 20, 0.76);
+            opacity: 0;
+            transform: translate3d(-50%, calc(-50% + 12px), 0);
+            pointer-events: none;
+            transition:
+                opacity 0.9s ease,
+                transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .starry-experience.is-transitioning .starry-opening {
+            opacity: 0;
+            transform: scale(1.16) translate3d(0, -3%, 0);
+            filter: brightness(0.58) blur(3px);
+        }
+        .starry-experience.is-transitioning .starry-splat-canvas {
+            opacity: 0;
+        }
+        .starry-experience.is-transitioning .starry-river,
+        .starry-experience.is-river .starry-river {
+            opacity: 1;
+            transform: scale(1.02);
+            filter: brightness(1) blur(0);
+        }
+        .starry-experience.is-transitioning .starry-transition-title {
+            opacity: 1;
+            transform: translate3d(-50%, -50%, 0);
+        }
+        .starry-experience.is-river .starry-opening,
+        .starry-experience.is-river .starry-transition-title,
+        .starry-experience.is-river .starry-enter {
+            visibility: hidden;
+            opacity: 0;
+        }
+        @keyframes starry-breathe {
+            from { transform: scale(1.018) translate3d(0, 0, 0); }
+            to { transform: scale(1.045) translate3d(-0.35%, -0.3%, 0); }
+        }
+        @keyframes starry-hint-in {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 768px) {
+            .starry-enter-hint {
+                right: 1.2rem;
+                bottom: 1.5rem;
+                letter-spacing: 0.12em;
+            }
+            .starry-splat-canvas {
+                opacity: 0.5;
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .starry-opening-video {
+                animation: none;
+            }
+            .starry-splat-canvas {
+                display: none;
+            }
+            .starry-experience.is-webgl-splat .starry-opening-video {
+                opacity: 1;
+                filter: none;
+            }
+            .starry-opening,
+            .starry-river,
+            .starry-transition-title {
+                transition-duration: 0.35s;
+            }
+            .starry-enter-hint {
+                animation: none;
+                opacity: 1;
+            }
+        }
     </style>
 </head>
-<body>
+<body class="starry-lock">
+    <main id="starry-experience" class="starry-experience" data-scene="opening" aria-live="polite">
+        <section class="starry-scene starry-opening" aria-label="Animated Starry Night opening scene">
+            <video
+                id="starry-opening-video"
+                class="starry-opening-video"
+                src="星月夜 0.3 慢速版.mp4"
+                poster="01 星月夜融合.png"
+                autoplay
+                muted
+                loop
+                playsinline
+                preload="auto"
+            ></video>
+            <canvas id="starry-splat-canvas" class="starry-splat-canvas" aria-hidden="true"></canvas>
+            <div class="starry-atmosphere" aria-hidden="true"></div>
+            <button id="starry-enter" class="starry-enter" type="button" aria-label="Enter the Starry River">
+                <span class="starry-enter-hint">Click anywhere to enter</span>
+            </button>
+        </section>
+
+        <section class="starry-scene starry-river" aria-label="Temporary Starry River scene">
+            <img class="starry-river-image" src="Part 3.png" alt="A woman and a small white dog travelling by boat beneath a starry sky">
+        </section>
+
+        <p class="starry-transition-title">Enter My Starry River</p>
+    </main>
     <!-- 导航 -->
     <nav class="fixed w-full z-50 px-8 py-8 flex justify-between items-center mix-blend-difference">
         <div class="text-xl font-bold tracking-tighter italic">W.X.YING</div>
@@ -440,6 +663,323 @@ Into Castelfranco Town</h3>
     <footer class="py-20 text-center border-t border-zinc-900">
         <p class="text-[8px] text-zinc-800 tracking-[1em] uppercase">Xueying Wang &copy; 2024 / London</p>
     </footer>
+    <script src="starry-opening.js"></script>
+    <script>
+        (() => {
+            if (window.STARRY_SPLAT_WEBGL) return;
+            const experience = document.getElementById('starry-experience');
+            const openingVideo = document.getElementById('starry-opening-video');
+            const enterButton = document.getElementById('starry-enter');
+            const splatCanvas = document.getElementById('starry-splat-canvas');
+            const splatContext = splatCanvas.getContext('2d', { alpha: true });
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+            const scene = {
+                current: 'opening',
+                transitionTimer: null
+            };
+
+            const pointer = {
+                x: -1000,
+                y: -1000,
+                active: false,
+                radius: 190
+            };
+
+            const splats = {
+                items: [],
+                sprites: new Map(),
+                source: document.createElement('canvas'),
+                sourceReady: false,
+                animationFrame: null,
+                lastTime: 0,
+                width: 0,
+                height: 0,
+                dpr: 1
+            };
+
+            const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+            const randomBetween = (min, max) => min + Math.random() * (max - min);
+
+            function setScene(nextScene) {
+                scene.current = nextScene;
+                experience.dataset.scene = nextScene;
+                experience.classList.toggle('is-transitioning', nextScene === 'transition');
+                experience.classList.toggle('is-river', nextScene === 'river');
+
+                if (nextScene === 'river') {
+                    stopSplatAnimation();
+                    openingVideo.pause();
+                }
+            }
+
+            function enterRiver() {
+                if (scene.current !== 'opening') return;
+
+                setScene('transition');
+                enterButton.disabled = true;
+                clearTimeout(scene.transitionTimer);
+                scene.transitionTimer = window.setTimeout(() => {
+                    setScene('river');
+                }, reduceMotion.matches ? 450 : 2800);
+            }
+
+            function resetOpening() {
+                clearTimeout(scene.transitionTimer);
+                setScene('opening');
+                enterButton.disabled = false;
+                openingVideo.currentTime = 0;
+                if (!reduceMotion.matches) {
+                    openingVideo.play().catch(() => {});
+                    startSplatAnimation();
+                }
+            }
+
+            function getCoverTransform(sourceWidth, sourceHeight) {
+                const scale = Math.max(splats.width / sourceWidth, splats.height / sourceHeight);
+                return {
+                    scale,
+                    offsetX: (splats.width - sourceWidth * scale) / 2,
+                    offsetY: (splats.height - sourceHeight * scale) / 2
+                };
+            }
+
+            function captureVideoFrame() {
+                if (!openingVideo.videoWidth || !openingVideo.videoHeight) return false;
+
+                splats.source.width = openingVideo.videoWidth;
+                splats.source.height = openingVideo.videoHeight;
+                const sourceContext = splats.source.getContext('2d', { willReadFrequently: true });
+                sourceContext.drawImage(openingVideo, 0, 0, splats.source.width, splats.source.height);
+                splats.sourceReady = true;
+                return true;
+            }
+
+            function loadPosterFallback() {
+                const poster = new Image();
+                poster.src = '01 星月夜融合.png';
+                poster.onload = () => {
+                    splats.source.width = poster.naturalWidth;
+                    splats.source.height = poster.naturalHeight;
+                    splats.source.getContext('2d', { willReadFrequently: true }).drawImage(poster, 0, 0);
+                    splats.sourceReady = true;
+                    buildSplats();
+                    startSplatAnimation();
+                };
+            }
+
+            function getSplatSprite(red, green, blue) {
+                const key = `${red >> 5}-${green >> 5}-${blue >> 5}`;
+                if (splats.sprites.has(key)) return splats.sprites.get(key);
+
+                const sprite = document.createElement('canvas');
+                sprite.width = 40;
+                sprite.height = 40;
+                const spriteContext = sprite.getContext('2d');
+                const gradient = spriteContext.createRadialGradient(20, 20, 0, 20, 20, 20);
+                gradient.addColorStop(0, `rgba(${red}, ${green}, ${blue}, 0.84)`);
+                gradient.addColorStop(0.34, `rgba(${red}, ${green}, ${blue}, 0.48)`);
+                gradient.addColorStop(0.72, `rgba(${red}, ${green}, ${blue}, 0.12)`);
+                gradient.addColorStop(1, `rgba(${red}, ${green}, ${blue}, 0)`);
+                spriteContext.fillStyle = gradient;
+                spriteContext.fillRect(0, 0, 40, 40);
+                splats.sprites.set(key, sprite);
+                return sprite;
+            }
+
+            function buildSplats() {
+                if (!splats.sourceReady || !splats.width || !splats.height) return;
+
+                const sourceContext = splats.source.getContext('2d', { willReadFrequently: true });
+                const sourceWidth = splats.source.width;
+                const sourceHeight = splats.source.height;
+                const pixels = sourceContext.getImageData(0, 0, sourceWidth, sourceHeight).data;
+                const transform = getCoverTransform(sourceWidth, sourceHeight);
+                const targetCount = clamp(Math.round((splats.width * splats.height) / 1800), 420, 1150);
+                const nextSplats = [];
+                let attempts = 0;
+
+                while (nextSplats.length < targetCount && attempts < targetCount * 12) {
+                    attempts += 1;
+                    const x = Math.random() * splats.width;
+                    const y = Math.random() * splats.height;
+                    const sourceX = Math.floor((x - transform.offsetX) / transform.scale);
+                    const sourceY = Math.floor((y - transform.offsetY) / transform.scale);
+
+                    if (sourceX < 0 || sourceX >= sourceWidth || sourceY < 0 || sourceY >= sourceHeight) continue;
+
+                    const pixelIndex = (sourceY * sourceWidth + sourceX) * 4;
+                    const red = pixels[pixelIndex];
+                    const green = pixels[pixelIndex + 1];
+                    const blue = pixels[pixelIndex + 2];
+                    const brightness = red * 0.24 + green * 0.58 + blue * 0.18;
+                    const sourceRatioY = sourceY / sourceHeight;
+                    const isSky = sourceRatioY < 0.66;
+                    const acceptance = isSky
+                        ? clamp((brightness - 34) / 110, 0.18, 0.9)
+                        : clamp((brightness - 42) / 160, 0.06, 0.3);
+
+                    if (Math.random() > acceptance) continue;
+
+                    const goldBias = red > blue * 1.05 && green > blue * 0.86;
+                    nextSplats.push({
+                        baseX: x,
+                        baseY: y,
+                        x,
+                        y,
+                        phase: Math.random() * Math.PI * 2,
+                        cursorAngle: 0,
+                        isSky,
+                        orbit: isSky ? randomBetween(1.6, 5.4) : randomBetween(0.5, 1.9),
+                        baseRotation: isSky ? 0.1 : 0.035,
+                        width: goldBias ? randomBetween(9, 20) : randomBetween(7, 16),
+                        height: goldBias ? randomBetween(3.2, 7) : randomBetween(2.4, 5.5),
+                        tilt: randomBetween(-0.7, 0.7),
+                        opacity: clamp(brightness / 225, 0.18, goldBias ? 0.72 : 0.5),
+                        sprite: getSplatSprite(red, green, blue)
+                    });
+                }
+
+                splats.items = nextSplats;
+            }
+
+            function resizeSplatCanvas() {
+                const bounds = experience.getBoundingClientRect();
+                splats.width = Math.max(1, bounds.width);
+                splats.height = Math.max(1, bounds.height);
+                splats.dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+                splatCanvas.width = Math.round(splats.width * splats.dpr);
+                splatCanvas.height = Math.round(splats.height * splats.dpr);
+                splatCanvas.style.width = `${splats.width}px`;
+                splatCanvas.style.height = `${splats.height}px`;
+                buildSplats();
+            }
+
+            function drawSplats(time) {
+                if (scene.current === 'river' || reduceMotion.matches || document.hidden) {
+                    splats.animationFrame = null;
+                    return;
+                }
+
+                const delta = clamp((time - (splats.lastTime || time)) / 16.67, 0.25, 2);
+                splats.lastTime = time;
+                splatContext.setTransform(splats.dpr, 0, 0, splats.dpr, 0, 0);
+                splatContext.clearRect(0, 0, splats.width, splats.height);
+                splatContext.globalCompositeOperation = 'screen';
+
+                for (const particle of splats.items) {
+                    particle.phase += particle.baseRotation * 0.0024 * delta;
+                    let x = particle.baseX + Math.cos(particle.phase) * particle.orbit;
+                    let y = particle.baseY + Math.sin(particle.phase) * particle.orbit * 0.56;
+
+                    const dx = x - pointer.x;
+                    const dy = y - pointer.y;
+                    const distance = Math.hypot(dx, dy);
+                    const influence = pointer.active && particle.isSky
+                        ? clamp(1 - distance / pointer.radius, 0, 1)
+                        : 0;
+
+                    if (influence > 0) {
+                        const rotationSpeed = (0.1 + (0.23 - 0.1) * influence) * 0.012 * delta;
+                        particle.cursorAngle += rotationSpeed;
+                        const angle = Math.atan2(dy, dx) + particle.cursorAngle;
+                        x = pointer.x + Math.cos(angle) * distance;
+                        y = pointer.y + Math.sin(angle) * distance;
+                    } else {
+                        particle.cursorAngle *= 0.94;
+                    }
+
+                    splatContext.save();
+                    splatContext.translate(x, y);
+                    splatContext.rotate(particle.tilt + particle.phase * 0.32);
+                    splatContext.globalAlpha = particle.opacity * (0.72 + influence * 0.28);
+                    splatContext.drawImage(
+                        particle.sprite,
+                        -particle.width,
+                        -particle.height,
+                        particle.width * 2,
+                        particle.height * 2
+                    );
+                    splatContext.restore();
+                }
+
+                splatContext.globalAlpha = 1;
+                splatContext.globalCompositeOperation = 'source-over';
+                splats.animationFrame = window.requestAnimationFrame(drawSplats);
+            }
+
+            function startSplatAnimation() {
+                if (reduceMotion.matches || splats.animationFrame || scene.current === 'river') return;
+                splats.lastTime = 0;
+                splats.animationFrame = window.requestAnimationFrame(drawSplats);
+            }
+
+            function stopSplatAnimation() {
+                if (!splats.animationFrame) return;
+                window.cancelAnimationFrame(splats.animationFrame);
+                splats.animationFrame = null;
+            }
+
+            experience.addEventListener('pointermove', (event) => {
+                const bounds = experience.getBoundingClientRect();
+                pointer.x = event.clientX - bounds.left;
+                pointer.y = event.clientY - bounds.top;
+                pointer.active = true;
+                pointer.radius = clamp(Math.min(bounds.width, bounds.height) * 0.2, 120, 220);
+            }, { passive: true });
+
+            experience.addEventListener('pointerleave', () => {
+                pointer.active = false;
+            });
+
+            enterButton.addEventListener('click', enterRiver);
+            window.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && scene.current !== 'opening') resetOpening();
+            });
+
+            let resizeFrame = null;
+            window.addEventListener('resize', () => {
+                if (resizeFrame) window.cancelAnimationFrame(resizeFrame);
+                resizeFrame = window.requestAnimationFrame(resizeSplatCanvas);
+            }, { passive: true });
+
+            reduceMotion.addEventListener('change', () => {
+                if (reduceMotion.matches) {
+                    openingVideo.pause();
+                    stopSplatAnimation();
+                } else if (scene.current === 'opening') {
+                    openingVideo.play().catch(() => {});
+                    startSplatAnimation();
+                }
+            });
+
+            openingVideo.addEventListener('loadeddata', () => {
+                if (captureVideoFrame()) {
+                    resizeSplatCanvas();
+                    startSplatAnimation();
+                }
+            }, { once: true });
+
+            openingVideo.addEventListener('error', () => {
+                loadPosterFallback();
+            }, { once: true });
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    stopSplatAnimation();
+                } else if (scene.current !== 'river') {
+                    startSplatAnimation();
+                }
+            });
+
+            resizeSplatCanvas();
+            if (reduceMotion.matches) {
+                openingVideo.pause();
+            } else {
+                openingVideo.play().catch(() => {});
+            }
+        })();
+    </script>
     <script>
         const apiKey = ""; 
         const appId = 'portfolio-ai-xueying';
@@ -553,8 +1093,13 @@ Into Castelfranco Town</h3>
         document.getElementById('chat-send').onclick = handleChat;
         chatInput.onkeypress = (e) => { if(e.key === 'Enter') handleChat(); };
         function closeModal() { document.getElementById('project-modal').style.display = 'none'; document.body.style.overflow = 'auto'; }
-        window.addEventListener('mousemove', (e) => { const r = canvas.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; });
-        initParticles();
+        window.addEventListener('mousemove', (e) => {
+            if (document.body.classList.contains('starry-lock')) return;
+            const r = canvas.getBoundingClientRect();
+            mouse.x = e.clientX - r.left;
+            mouse.y = e.clientY - r.top;
+        });
+        if (!document.body.classList.contains('starry-lock')) initParticles();
     </script>
     <script type="module" src="/index.tsx"></script>
 </body>
