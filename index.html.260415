@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xueying Wang | AI & Sustainable Design Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Noto+Sans+SC:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-pure: #0A0A0A;
+            --brand-blue: #1D24CA;
+            --accent-orange: #FF6B35;
+        }
+        body {
+            background-color: var(--bg-pure);
+            color: #ffffff;
+            font-family: 'Inter', 'Noto Sans SC', sans-serif; /* 修改此处可改变全局字形 */
+            margin: 0;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+        /* 1. 粒子河流曲线形状 (已调平缓) */
+        .river-mask-container {
+            position: relative;
+            width: 100vw;
+            height: 600px;
+            margin: 20px 0;
+            overflow: hidden;
+            -webkit-mask-image: radial-gradient(ellipse 100% 50% at 50% 50%, black 40%, transparent 95%);
+            mask-image: radial-gradient(ellipse 100% 50% at 50% 50%, black 40%, transparent 95%);
+        }
+        #particle-canvas {
+            width: 100%;
+            height: 100%;
+            filter: contrast(1.2) brightness(1.2);
+        }
+        /* 2. 线性分布通用样式 */
+        .timeline-container {
+            position: relative;
+            padding-left: 3rem;
+        }
+        .timeline-line {
+            position: absolute;
+            left: 0.5rem;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: linear-gradient(to bottom, transparent, var(--accent-orange), var(--accent-orange), transparent);
+        }
+        .timeline-node {
+            position: absolute;
+            left: 0.2rem;
+            width: 0.6rem;
+            height: 0.6rem;
+            background: var(--accent-orange);
+            border-radius: 50%;
+            box-shadow: 0 0 12px var(--accent-orange);
+            z-index: 10;
+        }
+        /* 3. 作品集排版 */
+        .experience-item {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            margin-bottom: 8rem;
+        }
+        .experience-item:nth-child(even) {
+            grid-template-columns: 1fr 1.2fr;
+        }
+        .experience-item:nth-child(even) > .project-img-wrapper {
+            order: 2;
+        }
+        .experience-item:nth-child(even) > .timeline-container {
+            order: 1;
+        }
+        .project-img-wrapper {
+            position: relative;
+            border-radius: 2.5rem;
+            overflow: hidden;
+            cursor: pointer;
+            aspect-ratio: 14 / 9;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .project-img-wrapper:hover {
+            transform: translateY(-10px) scale(1.02);
+        }
+        .project-img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        /* 修改此处 clamp 可调整标题大小 */
+        .hero-text {
+            font-size: clamp(2.5rem, 10vw, 6rem);
+            font-weight: 800;
+            line-height: 0.9;
+            letter-spacing: -0.04em;
+        }
+        /* 项目详情弹窗 */
+        #project-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.98);
+            z-index: 1000;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        /* ✨ AI 助手样式 */
+        .ai-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            background: linear-gradient(90deg, #1D24CA, #FF6B35);
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+        }
+        #ai-chat-trigger {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 100;
+            background: var(--accent-orange);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.4);
+            transition: all 0.3s;
+        }
+        #ai-chat-window {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 350px;
+            height: 500px;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 20px;
+            display: none;
+            flex-direction: column;
+            z-index: 100;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+        }
+        /* 技能进度条 */
+        .skill-bar-bg {
+            height: 2px;
+            background: #222;
+            width: 100%;
+            position: relative;
+            margin-top: 6px;
+        }
+        .skill-bar-fill {
+            height: 100%;
+            background: var(--brand-blue);
+            position: absolute;
+            left: 0; top: 0;
+            transition: width 1s ease-out;
+        }
+        @media (max-width: 768px) {
+            .experience-item { grid-template-cols: 1fr; gap: 2rem; }
+            #ai-chat-window { width: calc(100vw - 40px); right: 20px; }
+        }
+        .loading-dots:after {
+            content: '.';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60% { content: '...'; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航 -->
+    <nav class="fixed w-full z-50 px-8 py-8 flex justify-between items-center mix-blend-difference">
+        <div class="text-xl font-bold tracking-tighter italic">W.X.YING</div>
+        <div class="flex gap-8 text-[9px] font-bold tracking-[0.3em] uppercase text-gray-400">
+            <a href="#edu" class="hover:text-white transition">Education</a>
+            <a href="#skills" class="hover:text-white transition">Capabilities</a>
+            <a href="#projects" class="hover:text-white transition">Projects</a>
+            <a href="#work" class="hover:text-white transition">Experience</a>
+        </div>
+    </nav>
+    <!-- 主视觉 -->
+    <section class="pt-40 pb-10 flex flex-col items-center text-center">
+        <h1 class="hero-text mb-6 uppercase">AI Agent<br><span class="text-transparent" style="-webkit-text-stroke: 1px #555;">GENERATION</span></h1>
+        
+        <div class="river-mask-container">
+            <canvas id="particle-canvas"></canvas>
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <p class="text-[9px] tracking-[1.5em] text-white/20 uppercase">Fluid Design Workflow</p>
+            </div>
+        </div>
+        <p class="max-w-xl text-gray-500 font-light mt-8 text-sm leading-relaxed px-6">
+            基于<span class="text-white">AI Coding算法的AI PM 产品经理</span>,从London到深圳,<br>
+            我致力于用 <span class="text-white">AI Agent, Harness Engineering 搭建调优AI工作流</span>与AI逻辑搭建MVP, 重新定义产品生产力。
+        </p>
+    </section>
+    <!-- 1. EDUCATION & SKILLS -->
+    <section id="edu" class="max-w-6xl mx-auto px-6 py-32 grid grid-cols-1 md:grid-cols-2 gap-20">
+        <div>
+            <h2 class="text-[10px] font-bold tracking-[0.6em] text-[var(--accent-orange)] mb-12 uppercase">Education</h2>
+            <div class="timeline-container">
+                <div class="timeline-line"></div>
+                
+                <div class="relative mb-32">
+                    <div class="timeline-node" style="top: 0.5rem"></div>
+                    <div class="ml-6">
+                        <span class="text-[var(--accent-orange)] font-mono text-xs font-bold">2023/09 - 2024/10</span>
+                        <h3 class="text-lg font-bold mt-3">AA School of Architecture</h3>
+                        <p class="text-zinc-500 text-[10px] ">MSc Sustainable Environmental Parametric Design</p>
+                    </div>
+                </div>
+                <div class="relative">
+                    <div class="timeline-node" style="top: 0.5rem"></div>
+                    <div class="ml-6">
+                        <span class="text-zinc-100 font-mono text-xs font-bold">2019/09 - 2022/07</span>
+                        <h3 class="text-lg font-bold mt-3">Cardiff University</h3>
+                        <p class="text-zinc-500 text-[10px] ">BSc Architecture Design (RIBA Part 1)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="skills">
+            <h2 class="text-[10px] font-bold tracking-[0.6em] text-[var(--accent-orange)] mb-12 uppercase">Tech Spectrum</h2>
+            <div class="space-y-6">
+                <div>
+                    <div class="flex justify-between text-[10px] tracking-widest text-zinc-400"><span>AI Construction (Vibe Coding / Cluade Code / Harness Engineering Tuning)</span><span>80%</span></div>
+                    <div class="skill-bar-bg"><div class="skill-bar-fill" style="width: 80%"></div></div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-[10px] tracking-widest text-zinc-400"><span>AI Agent Workflow (Coze / Prompt Engineering / RAG / Fine Tuning)</span><span>80%</span></div>
+                    <div class="skill-bar-bg"><div class="skill-bar-fill" style="width: 80%"></div></div>
+                </div>
+                 <div>
+                    <div class="flex justify-between text-[10px] tracking-widest text-zinc-400"><span>Python</span><span>70%</span></div>
+                    <div class="skill-bar-bg"><div class="skill-bar-fill" style="width: 70%"></div></div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-[10px] tracking-widest text-zinc-400"><span>Grasshopper (Honeybee / Ladybug) / Parametric Design</span><span>85%</span></div>
+                    <div class="skill-bar-bg"><div class="skill-bar-fill" style="width: 85%"></div></div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-[10px] tracking-widest text-zinc-400"><span>CFD Simulation (Airflow)</span><span>80%</span></div>
+                    <div class="skill-bar-bg"><div class="skill-bar-fill" style="width: 80%"></div></div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-[10px] tracking-widest text-zinc-400"><span>D5 Render / Enscape Rendering</span><span>85%</span></div>
+                    <div class="skill-bar-bg"><div class="skill-bar-fill" style="width: 85%"></div></div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-[10px] tracking-widest text-zinc-400"><span>Adobe Suites (PS / ID / Ai)</span><span>90%</span></div>
+                    <div class="skill-bar-bg"><div class="skill-bar-fill" style="width: 90%"></div></div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-[10px] tracking-widest text-zinc-400"><span>3D/2D Modeling (Rhino / Sketch Up / CAD)</span><span>90%</span></div>
+                    <div class="skill-bar-bg"><div class="skill-bar-fill" style="width: 90%"></div></div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 2. PROJECTS SHOWCASE -->
+    <section id="projects" class="max-w-6xl mx-auto px-6 py-32">
+        <h2 class="text-[10px] font-bold tracking-[0.6em] text-[var(--accent-orange)] mb-24 uppercase">Featured Projects</h2>
+
+        <div class="space-y-32">
+            <!-- Project1: Left Image -->
+            <div class="experience-item">
+                <div class="project-img-wrapper" onclick="showProject('project1')">
+                    <img src="https://i.postimg.cc/sXHr0p0p/AI_Researcher_image.jpg" alt="Parametric Design Project">
+                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition">
+                        <span class="text-xs tracking-widest uppercase bg-white/10 backdrop-blur px-4 py-2 rounded-full">View Project</span>
+                    </div>
+                </div>
+                <div class="timeline-container">
+                    <div class="timeline-line"></div>
+                    <div class="timeline-node" style="top: 0.5rem"></div>
+                    <span class="text-[var(--accent-orange)] font-mono text-[10px] font-bold tracking-widest uppercase">2025/12 - present</span>
+                    <h3 class="text-2xl font-bold mt-2">AI Product Researcher</h3>
+                    <p class="text-gray-400 text-sm mt-4 leading-relaxed">开发基于Coze/Dify的AI工作流系统，集成Prompt Engineering, RAG, Fine Tuning, 多模态理解等技术，优化建筑设计方案的生成效率。</p>
+                </div>
+            </div>
+
+            <!-- Project2: Right Image (swap order) -->
+            <div class="experience-item">
+                <div class="project-img-wrapper" onclick="showProject('project2')">
+                    <img src="https://i.postimg.cc/Qt978sNS/Architect-Portfolio-2025.jpg" style="transform: scale(1.05); transform-origin: center; width: 100%; height: auto;"alt="LLANDAFF GALLERY">
+                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition">
+                        <span class="text-xs tracking-widest uppercase bg-white/10 backdrop-blur px-4 py-2 rounded-full">View Project</span>
+                    </div>
+                </div>
+                <div class="timeline-container">
+                    <div class="timeline-line"></div>
+                    <div class="timeline-node" style="top: 0.5rem"></div>
+                    <span class="text-[var(--accent-orange)] font-mono text-[10px] font-bold tracking-widest uppercase">2025</span>
+                    <h3 class="text-2xl font-bold mt-2">LLANDAFF GALLERY</h3>
+                    <p class="text-gray-400 text-sm mt-4 leading-relaxed">结合Honeybee参数化热环境模拟和CFD算法，模拟室内最佳日照效果；多轮测算屋顶流线型设计，优化美术馆室内微气候，室外风环境与内部自然通风设计。</p>
+                </div>
+            </div>
+
+            <!-- Project3: Left Image -->
+            <div class="experience-item">
+                <div class="project-img-wrapper" onclick="showProject('project3')">
+                    <img src="https://i.postimg.cc/j50fSmDQ/CFD-lines-da-da-Base.png" style="transform: scale(1.3); transform-origin: center; width: 100%; height: auto;" alt="Passive Design - High Rise Residence">
+                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition">
+                        <span class="text-xs tracking-widest uppercase bg-white/10 backdrop-blur px-4 py-2 rounded-full">View Project</span>
+                    </div>
+                </div>
+                <div class="timeline-container">
+                    <div class="timeline-line"></div>
+                    <div class="timeline-node" style="top: 0.5rem"></div>
+                    <span class="text-[var(--accent-orange)] font-mono text-[10px] font-bold tracking-widest uppercase">2024/4 - 2024/9</span>
+                    <h3 class="text-2xl font-bold mt-2">Passive Design - High Rise Residence</h3>
+                    <p class="text-gray-400 text-sm mt-4 leading-relaxed">基于社区用户实地调研采访，结合Honeybee热环境模拟和CFD算法，通过可持续设计和外立面改造，解决高层住宅冬冷夏热问题，优化高层住宅的自然通风与热舒适设计。</p>
+                </div>
+            </div>
+
+              <!-- Project4: Right Image (swap order) -->
+            <div class="experience-item">
+                <div class="project-img-wrapper" onclick="showProject('project4')">
+                    <img src="https://i.postimg.cc/26PyjZ3n/Community-Center-Castelfranco-Rendering-01.jpg" style="transform: scale(1); transform-origin: center; width: 100%; height: auto;"alt="Community Center: 
+Into Castelfranco Town">
+                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition">
+                        <span class="text-xs tracking-widest uppercase bg-white/10 backdrop-blur px-4 py-2 rounded-full">View Project</span>
+                    </div>
+                </div>
+                <div class="timeline-container">
+                    <div class="timeline-line"></div>
+                    <div class="timeline-node" style="top: 0.5rem"></div>
+                    <span class="text-[var(--accent-orange)] font-mono text-[10px] font-bold tracking-widest uppercase">2022/3 - 2022/7</span>
+                    <h3 class="text-2xl font-bold mt-2">Community Center: 
+Into Castelfranco Town</h3>
+                    <p class="text-gray-400 text-sm mt-4 leading-relaxed">基于对当地居民的调研，设计流线型可持续社区中心，提供活动室，Cafe，求职中心以解决小镇居民诉求，提升居民参与度与城镇凝聚力。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. EXPERIENCE & PROJECTS -->
+    <section id="work" class="max-w-6xl mx-auto px-6 py-20">
+        <h2 class="text-[10px] font-bold tracking-[0.6em] text-[var(--accent-orange)] mb-24 uppercase">Work Experience</h2>
+        
+        
+                <div class="experience-item">
+            <div class="project-img-wrapper" onclick="showProject('TIMEVERSE')">
+                <img src="https://i.postimg.cc/6qh6Hq0p/Gemini-Generated-Image-sqpuyfsqpuyfsqpu.png" alt="TIMEVERSE">
+            </div>
+            <div class="timeline-container">
+                <div class="timeline-line"></div>
+                <div class="timeline-node" style="top: 0.5rem; background: #333; box-shadow: none;"></div>
+                <span class="text-[var(--text-gray)] font-mono text-[10px] font-bold tracking-widest uppercase">2026/04 - Present</span>
+                <span class="text-zinc-600 font-mono text-[10px] tracking-widest uppercase">AI PM - AI产品经理</span>
+                <h3 class="text-2xl font-bold mt-2">TIMEVERSE</h3>
+                <p class="text-gray-400 text-sm mt-4 leading-relaxed">深圳上市公司AI产品经理: 负责面向人工智能和程序员方向的AI Agent产品规划与管理, 研究前沿Agent系统架构与需求侧技术落地, 使用AI Coding搭建前端UI/UX界面或工程化代码, 更好更快搭建基础MVP, 推动AI技术在人工智能领域的应用与发展。</p>
+            </div>
+        </div>
+        <div class="experience-item">
+            <div class="project-img-wrapper" onclick="showProject('SWP')">
+                <img src="https://i.postimg.cc/rwn44gmy/Gemini-Generated-Image-urz1xeurz1xeurz1.png" alt="SWP">
+            </div>
+            <div class="timeline-container">
+                <div class="timeline-line"></div>
+                <div class="timeline-node" style="top: 0.5rem; background: #333; box-shadow: none;"></div>
+                <span class="text-[var(--text-gray)] font-mono text-[10px] font-bold tracking-widest uppercase">2025/06 - 2026/02</span>
+                <span class="text-zinc-600 font-mono text-[10px] tracking-widest uppercase">AI Architect Assistant</span>
+                <h3 class="text-2xl font-bold mt-2">SWP</h3>
+                <p class="text-gray-400 text-sm mt-4 leading-relaxed">伦敦工作室: 负责沙特城市规划改造项目和比利时公共建筑项目的 Rhino 建模与参数化模拟。结合Honeybee/Ladybug CFD模拟, 完成沙特城市规划的微气候分析与光热优化。提升建筑群的通风效率和能源效能。
+                同时负责AI建筑工作流研究, 利用ComfyUI搭建更高效的AI效果图生成系统; 建立不同国家建筑法规知识库, 优化RAG向量化层级切片, 提高建筑法规审核效率。</p>
+            </div>
+        </div>
+        <div class="experience-item">
+            <div class="project-img-wrapper" onclick="showProject('BAID')">
+                <img src="https://i.postimg.cc/sxkBFvcW/BAID.png" alt="BAID">
+            </div>
+            <div class="timeline-container">
+                <div class="timeline-line"></div>
+                <div class="timeline-node" style="top: 0.5rem; background: #333; box-shadow: none;"></div>
+                <span class="text-[var(--text-gray)] font-mono text-[10px] font-bold tracking-widest uppercase">2022/10 - 2023/03</span>
+                <span class="text-zinc-600 font-mono text-[10px] tracking-widest uppercase">Architect Assistant</span>
+                <h3 class="text-2xl font-bold mt-2">BAID</h3>
+                <p class="text-gray-400 text-sm mt-4 leading-relaxed">北京建筑事务所Part 1 Architect Assistant: 协助主创设计师完成大型文旅项目,国际医院,泰康养老项目的Rhino 3D建模,Enscape渲染,PS绘图,外立面优化等方案深化工作。</p>
+            </div>
+        </div>
+    </section>
+    <!-- 3. HONORS & AWARDS -->
+    <section id="awards" class="max-w-6xl mx-auto px-6 py-32 border-t border-zinc-900">
+        <h2 class="text-[10px] font-bold tracking-[0.6em] text-[var(--accent-orange)] mb-16 uppercase">Honors & Awards</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div class="flex gap-6 items-start">
+                <span class="text-zinc-800 text-4xl font-bold italic">01</span>
+                <div>
+                    <h4 class="text-lg font-bold">London 2025伦敦设计节金奖GOLD WINNER</h4>
+                    <p class="text-zinc-500 text-xs mt-1">London Design Awards 2025 GOLD WINNER </p>
+                </div>
+            </div>
+            <div class="flex gap-6 items-start">
+                <span class="text-zinc-800 text-4xl font-bold italic">02</span>
+                <div>
+                    <h4 class="text-lg font-bold">2024 WROCLAW可持续建筑与城市设计欧洲国际竞赛一等奖</h4>
+                    <p class="text-zinc-500 text-xs mt-1">PLEA 2024 WROCLAW Sustainable Architecture and Urban Design. 1st Award</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 项目详情弹窗 -->
+    <div id="project-modal">
+        <div class="max-w-5xl mx-auto">
+            <div class="flex justify-between items-start mb-8">
+                <div>
+                    <div class="ai-badge">✨ Detailed Information</div>
+                    <h2 id="modal-title" class="text-4xl font-extrabold italic mb-2 tracking-tighter">Project Detail</h2>
+                    <p id="modal-meta" class="text-zinc-500 text-xs tracking-widest uppercase"></p>
+                </div>
+                <button onclick="closeModal()" class="text-zinc-600 hover:text-white text-5xl">&times;</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                <div class="md:col-span-2 grid grid-cols-1 gap-4" id="modal-gallery"></div>
+                <div class="space-y-8">
+                    <div class="bg-zinc-900/50 p-8 rounded-3xl border border-zinc-800">
+                        <h4 class="text-xs font-bold text-white mb-4 tracking-widest uppercase">Overview</h4>
+                        <p id="modal-desc" class="text-zinc-400 text-sm leading-relaxed mb-6"></p>
+                        <button id="ai-insight-btn" class="w-full py-4 bg-white text-black text-[10px] font-bold rounded-xl hover:bg-[var(--accent-orange)] hover:text-white transition flex items-center justify-center gap-2">
+                             ✨ 点击获取 AI 深度点评 
+                        </button>
+                        <div id="ai-insight-result" class="mt-4 text-xs text-zinc-500 italic hidden border-t border-zinc-800 pt-4 leading-relaxed"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- AI 聊天悬浮窗 -->
+    <div id="ai-chat-trigger"><svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg></div>
+    <div id="ai-chat-window">
+        <div class="p-4 bg-zinc-900 flex justify-between items-center border-b border-zinc-800">
+            <span class="text-[10px] font-bold tracking-widest uppercase text-zinc-400">✨ AI Design Assistant</span>
+            <button onclick="toggleChat()" class="text-zinc-600 hover:text-white">&times;</button>
+        </div>
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 text-xs"></div>
+        <div class="p-4 border-t border-zinc-800 flex gap-2">
+            <input type="text" id="chat-input" placeholder="Ask me anything..." class="flex-1 bg-transparent border border-zinc-700 rounded-full px-4 py-2 text-xs focus:outline-none">
+            <button id="chat-send" class="p-2 bg-[var(--accent-orange)] rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg></button>
+        </div>
+    </div>
+    <footer class="py-20 text-center border-t border-zinc-900">
+        <p class="text-[8px] text-zinc-800 tracking-[1em] uppercase">Xueying Wang &copy; 2024 / London</p>
+    </footer>
+    <script>
+        const apiKey = ""; 
+        const appId = 'portfolio-ai-xueying';
+        // --- 1. 粒子河流逻辑 (调平曲线) ---
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let mouse = { x: -200, y: -100 };
+        function initParticles() {
+            canvas.width = window.innerWidth;
+            canvas.height = 450;
+            const bgImage = new Image();
+            bgImage.crossOrigin = "anonymous";
+            bgImage.src = "https://i.postimg.cc/rFt6s5Mr/xing-yue-ye-rong-he-ban.png";
+              function createParticles(imgData) {
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                const sW = 200; const sH = 100;
+                tempCanvas.width = sW; tempCanvas.height = sH;
+                if (imgData) tempCtx.drawImage(imgData, 0, 0, sW, sH);
+                const data = tempCtx.getImageData(0, 0, sW, sH).data;
+                const stepX = canvas.width / sW; const stepY = canvas.height / sH;
+                for (let y = 0; y < sH; y++) {
+                    for (let x = 0; x < sW; x++) {
+                        const i = (y * sW + x) * 4;
+                        if ((data[i] + data[i+1] + data[i+2]) / 3 > 60) {
+                            const waveY = Math.sin(x * 0.04) * 30 + 250;
+                            particles.push({
+                                x: x * stepX, y: waveY + (y - 50) * 3,
+                                ox: x * stepX, oy: waveY + (y - 50) * 3,
+                                color: `rgb(${data[i]},${data[i+1]},${data[i+2]})`,
+                                size: 1.2
+                            });
+                        }
+                    }
+                }
+                animate();
+            }
+            bgImage.onload = () => createParticles(bgImage);
+            bgImage.onerror = () => createParticles(null);
+        }
+        function animate() {
+            ctx.fillStyle = 'rgba(10, 10, 10, 0.2)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                let dx = mouse.x - p.x; let dy = mouse.y - p.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < 100) { p.x -= dx * 0.08; p.y -= dy * 0.08; }
+                else { p.x += (p.ox - p.x) * 0.05; p.y += (p.oy - p.y) * 0.05; p.y += Math.sin(Date.now() * 0.001 + p.ox * 0.01) * 0.3; }
+                ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+            });
+            requestAnimationFrame(animate);
+        }
+        // --- 3. 详情弹窗与数据 ---
+        const projectData = { 
+            'project1': { title: 'AI Research & Development', meta: 'AI Agent Workflow System', desc: '研究并开发AI工作流系统，提升行业运行效率。', images: ['https://i.postimg.cc/7ZmPdzQ3/coze_客服系统.png',
+            'https://i.postimg.cc/VkvQ3cBh/coze-biao-shu-xi-tong.png'] },
+            'project2': { title: 'Llandaff Gallery', meta: 'Sustainable Parametric Design', desc: '运用参数化设计和CFD参数化模拟优化的可持续场馆设计。', images: ['https://i.postimg.cc/G2sDxRx6/Architect-Portfolio-202527.jpg',
+            'https://i.postimg.cc/7Y4z0pGS/Architect-Portfolio-202526.jpg',
+            'https://i.postimg.cc/P538GJ6p/Architect-Portfolio-20255.jpg',
+            'https://i.postimg.cc/SQ62SDTq/dui-bi03.png',
+            'https://i.postimg.cc/6pk46gXp/0021.png'] },
+            'project3': { title: 'Environmental Passive Design', meta: 'CFD/GH/LB Simulation & Optimization', desc: '结合Honeybee/Ladybug CFD模拟与Enscape渲染的环境分析方案。', images: ['https://i.postimg.cc/RZjpMs80/Architect-Portfolio-202512.jpg',
+            'https://i.postimg.cc/9FkJpgc9/Architect-Portfolio-202513.jpg',
+            'https://i.postimg.cc/wMvQ5LPQ/Architect-Portfolio-202514.jpg',
+            'https://i.postimg.cc/8c6jVCrG/Centre-Point-House-Section-ju-bu-jian-tou002.png',
+            'https://i.postimg.cc/CMzP9nmk/1m-Public-Plaza-wind001.png',
+            'https://i.postimg.cc/P5kSL3Tt/Architect-Portfolio-202515.jpg'] },
+            'project4': { title: 'Community Center in Castelfranco', meta: 'Sustainable Community Design', desc: '基于对当地居民的调研，设计流线型可持续社区中心，提供活动室，Cafe，求职中心以解决小镇居民诉求，提升居民参与度与城镇凝聚力。', images: ['https://i.postimg.cc/26PyjZ3n/Community-Center-Castelfranco-Rendering-01.jpg',
+            'https://i.postimg.cc/9f3drrhy/Architect-Portfolio-202518.jpg',
+            'https://i.postimg.cc/rF0RxMgg/Architect-Portfolio-202517.jpg',
+            'https://i.postimg.cc/MGDnqTK7/Architect-Portfolio-202519.jpg',
+            'https://i.postimg.cc/rsds1NGx/Architect-Portfolio-202520.jpg',
+            'https://i.postimg.cc/fT9kk5T2/Architect-Portfolio-202521.jpg'] },
+            'SWP': { title: 'SWP Works', meta: 'London Practice', desc: '参与沙特城市规划改造项目和比利时公共建筑项目的Rhino建模与参数化模拟。开展AI建筑工作流研究，搭建更高效的AI效果图生成系统；建立不同国家建筑法规知识库，优化RAG向量化层级切片，提高建筑法规审核效率。', images: ['https://i.postimg.cc/sXzwzgTq/SWP.png'] },
+            'BAID': { title: 'BAID Works', meta: 'Beijing Practice', desc: '参与中国多地养老院，大型文旅中心，医院设计。', images: ['https://i.postimg.cc/L4y1YDdg/Architect-Portfolio-20258.jpg'] },
+        };
+        let currentProjectId = null;
+        function showProject(id) {
+            currentProjectId = id;
+            const d = projectData[id];
+            document.getElementById('modal-title').innerText = d.title;
+            document.getElementById('modal-meta').innerText = d.meta;
+            document.getElementById('modal-desc').innerText = d.desc;
+            document.getElementById('modal-gallery').innerHTML = d.images.map(img => `<img src="${img}" class="rounded-3xl w-full">`).join('');
+            document.getElementById('ai-insight-result').classList.add('hidden');
+            document.getElementById('project-modal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        document.getElementById('ai-insight-btn').onclick = async () => {
+            const res = document.getElementById('ai-insight-result');
+            res.innerText = "✨ AI 正在思考中...";
+            res.classList.remove('hidden');
+            const insight = await callGemini(`分析项目：${projectData[currentProjectId].title}`, "你是一位资深AI产品经理, 请提供专业点评。");
+            res.innerText = insight;
+        }
+        // --- 4. 聊天功能 ---
+        const chatWin = document.getElementById('ai-chat-window');
+        const chatMsgs = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        function toggleChat() { chatWin.style.display = chatWin.style.display === 'flex' ? 'none' : 'flex'; }
+        document.getElementById('ai-chat-trigger').onclick = toggleChat;
+        async function handleChat() {
+            const text = chatInput.value.trim(); if (!text) return;
+            chatMsgs.innerHTML += `<div class="bg-[var(--brand-blue)] p-3 rounded-2xl text-right ml-auto max-w-[80%]">${text}</div>`;
+            chatInput.value = "";
+            const resp = await callGemini(text, "你是Xueying的数字助理。");
+            chatMsgs.innerHTML += `<div class="bg-zinc-800 p-3 rounded-2xl mr-auto max-w-[80%]">${resp}</div>`;
+            chatMsgs.scrollTop = chatMsgs.scrollHeight;
+        }
+        document.getElementById('chat-send').onclick = handleChat;
+        chatInput.onkeypress = (e) => { if(e.key === 'Enter') handleChat(); };
+        function closeModal() { document.getElementById('project-modal').style.display = 'none'; document.body.style.overflow = 'auto'; }
+        window.addEventListener('mousemove', (e) => { const r = canvas.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; });
+        initParticles();
+    </script>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>
