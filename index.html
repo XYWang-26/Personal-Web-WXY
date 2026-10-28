@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Xueying Wang | AI & Sustainable Design Portfolio</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Noto+Sans+SC:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -169,7 +169,7 @@
             transition: width 1s ease-out;
         }
         @media (max-width: 768px) {
-            .experience-item { grid-template-cols: 1fr; gap: 2rem; }
+            .experience-item { grid-template-columns: 1fr; gap: 2rem; }
             #ai-chat-window { width: calc(100vw - 40px); right: 20px; }
         }
         .loading-dots:after {
@@ -193,16 +193,24 @@
             min-height: 100dvh;
             overflow: hidden;
             isolation: isolate;
-            background: #071426;
+            background: #000;
         }
         .starry-scene {
             position: absolute;
             inset: 0;
             overflow: hidden;
         }
+        /* 第三幕占据首屏，人机交互结束后仍可继续浏览下方作品集。 */
+        .starry-experience.is-river {
+            position: relative;
+            inset: auto;
+            width: 100%;
+            max-width: 100vw;
+            height: 100dvh;
+        }
         .starry-opening {
             z-index: 1;
-            background: #071426 url("01 星月夜融合.png") center / cover no-repeat;
+            background: #071426 url("scenes/01-opening/starry-v007-poster.jpg") center top / cover no-repeat;
             opacity: 1;
             transform: scale(1);
             transition:
@@ -210,7 +218,28 @@
                 transform 2.8s cubic-bezier(0.22, 1, 0.36, 1),
                 filter 2.4s cubic-bezier(0.22, 1, 0.36, 1);
         }
+        /* 底部保留暗边过渡；顶部让出完整天空，避免遮住月晕上沿。 */
+        .starry-edge {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 10%;
+            z-index: 3;
+            pointer-events: none;
+            background: #000;
+            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(16px);
+        }
+        .starry-edge-top {
+            display: none;
+        }
+        .starry-edge-bottom {
+            bottom: 0;
+            -webkit-mask-image: linear-gradient(to top, #000 0%, #000 22%, rgba(0, 0, 0, 0.55) 52%, transparent 100%);
+            mask-image: linear-gradient(to top, #000 0%, #000 22%, rgba(0, 0, 0, 0.55) 52%, transparent 100%);
+        }
         .starry-opening-video,
+        .starry-transition-image,
         .starry-river-image {
             width: 100%;
             height: 100%;
@@ -218,26 +247,73 @@
         }
         .starry-opening-video {
             display: block;
-            transform: scale(1.018);
-            animation: starry-breathe 18s ease-in-out infinite alternate;
+            object-position: center top;
+            transform: none;
+            animation: none;
         }
-        .starry-splat-canvas {
+        /*
+         * 泼溅层＝画面本身（颗粒重建整幅星月夜），用正常混合、不透明。
+         * 注意：不要改成 screen 混合。screen 下暗颗粒等于不存在，
+         * 画面会变得又暗又稀，而且这一层的 opacity 会几乎失效。
+         * === splatOpacity 是「颗粒 ←→ 原视频」的交叉淡化 ===
+         * 1 = 全是颗粒，0 = 全是原视频，中间值是两者混合。
+         */
+        .starry-splat-canvas,
+        .starry-fallback-canvas,
+        .starry-particle-safety {
             position: absolute;
             inset: 0;
             width: 100%;
             height: 100%;
             pointer-events: none;
-            opacity: 0.64;
-            mix-blend-mode: screen;
+            opacity: var(--starry-splat-opacity, 1);
+            mix-blend-mode: normal;
             transition: opacity 1.2s ease;
         }
-        .starry-experience.is-webgl-splat .starry-opening-video {
-            opacity: 0.34;
-            filter: blur(0.8px) saturate(1.06) brightness(0.9);
+        .starry-fallback-canvas {
+            filter: brightness(1.28) saturate(1.45) contrast(1.16);
         }
-        .starry-experience.is-webgl-splat .starry-splat-canvas {
-            opacity: 1;
-            mix-blend-mode: normal;
+        /* First paint and last-resort particles also work without JS or canvas. */
+        .starry-particle-safety {
+            background-image:
+                radial-gradient(circle at 2px 3px, #d9edff 0 0.8px, transparent 1.3px),
+                radial-gradient(circle at 6px 8px, #f7d56b 0 0.7px, transparent 1.2px),
+                radial-gradient(circle at 10px 4px, #749ddf 0 0.9px, transparent 1.4px);
+            background-size: 17px 19px, 29px 23px, 23px 31px;
+            opacity: 0.65;
+            mask-image: linear-gradient(#000 0%, #000 60%, #777 100%);
+        }
+        .starry-particle-safety[hidden],
+        .starry-fallback-canvas[hidden] {
+            display: none;
+        }
+        .starry-transition {
+            z-index: 2;
+            opacity: 0;
+            transform: scale(1.025);
+            filter: brightness(0.72) blur(3px);
+            pointer-events: none;
+            transition:
+                opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 2.5s cubic-bezier(0.16, 1, 0.3, 1),
+                filter 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .starry-transition-image {
+            display: block;
+            opacity: 0.74;
+            filter: saturate(1.04) brightness(0.92);
+        }
+        .starry-transition-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.96;
+        }
+        /* 底层视频：从颗粒的缝隙里透上来 */
+        .starry-experience.is-webgl-splat .starry-opening-video {
+            opacity: var(--starry-video-opacity, 1);
         }
         .starry-atmosphere {
             position: absolute;
@@ -277,20 +353,195 @@
             animation: starry-hint-in 1.3s 1.2s ease forwards;
         }
         .starry-river {
-            z-index: 2;
+            z-index: 3;
             opacity: 0;
             transform: scale(1.09);
             filter: brightness(0.64) blur(5px);
             pointer-events: none;
+            background: #041126;
+            isolation: isolate;
+            cursor: grab;
+            touch-action: none;
             transition:
                 opacity 2.5s cubic-bezier(0.22, 1, 0.36, 1),
                 transform 3s cubic-bezier(0.22, 1, 0.36, 1),
                 filter 2.5s cubic-bezier(0.22, 1, 0.36, 1);
         }
+        .starry-river.is-dragging { cursor: grabbing; }
+        .starry-river-image,
+        .starry-river-art-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform-origin: 50% 57%;
+            filter: none;
+            will-change: transform;
+        }
+        .starry-river-image {
+            z-index: 0;
+            transform:
+                scale(var(--journey-scale, 1.02))
+                translate3d(0, var(--journey-y, 0%), 0);
+        }
+        .starry-river-art-canvas {
+            z-index: 1;
+            pointer-events: none;
+            transform: none;
+        }
+        .starry-river-canvas {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .river-vignette {
+            position: absolute;
+            inset: 0;
+            z-index: 4;
+            pointer-events: none;
+            background:
+                linear-gradient(to bottom, rgba(1, 7, 18, 0.18), transparent 38%, rgba(2, 8, 19, 0.16)),
+                radial-gradient(ellipse at center, transparent 50%, rgba(1, 7, 17, 0.36) 100%);
+            box-shadow: inset 0 0 8rem rgba(1, 6, 17, 0.34);
+        }
+        .website-project-panel {
+            position: absolute;
+            inset: 0;
+            z-index: 8;
+            display: grid;
+            grid-template-columns: minmax(15rem, 0.72fr) minmax(20rem, 1.28fr);
+            gap: clamp(2rem, 6vw, 7rem);
+            padding: clamp(5rem, 9vw, 8.5rem) clamp(1.5rem, 6vw, 7rem) clamp(2rem, 5vw, 5rem);
+            color: #f4ead1;
+            background: rgba(2, 9, 23, 0.9);
+            -webkit-backdrop-filter: blur(18px) saturate(0.82);
+            backdrop-filter: blur(18px) saturate(0.82);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translate3d(0, 1.25rem, 0);
+            transition: opacity 0.55s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.55s;
+        }
+        .website-project-panel.is-open {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translate3d(0, 0, 0);
+        }
+        .website-project-intro {
+            align-self: center;
+            max-width: 30rem;
+        }
+        .website-project-kicker {
+            margin: 0 0 1.25rem;
+            color: #d9b85d;
+            font: 600 0.62rem/1.2 'Space Mono', monospace;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+        .website-project-title {
+            margin: 0;
+            max-width: 7ch;
+            color: #fff8e8;
+            font-size: clamp(3rem, 7vw, 7.25rem);
+            font-weight: 700;
+            line-height: 0.86;
+            letter-spacing: 0;
+        }
+        .website-project-copy {
+            max-width: 34rem;
+            margin: 1.6rem 0 0;
+            color: rgba(241, 231, 207, 0.62);
+            font-size: clamp(0.78rem, 1.15vw, 0.96rem);
+            line-height: 1.8;
+        }
+        .website-project-list {
+            align-self: center;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1px;
+            max-height: min(68dvh, 45rem);
+            overflow: auto;
+            background: rgba(243, 220, 163, 0.16);
+        }
+        .website-project-item {
+            position: relative;
+            min-height: clamp(13rem, 31dvh, 18.5rem);
+            overflow: hidden;
+            background: #071329;
+            color: inherit;
+            text-decoration: none;
+        }
+        .website-project-item img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: saturate(0.74) brightness(0.7);
+            transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1), filter 0.5s ease;
+        }
+        .website-project-item::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(2, 8, 20, 0.9), transparent 58%);
+        }
+        .website-project-item:hover img,
+        .website-project-item:focus-visible img {
+            transform: scale(1.035);
+            filter: saturate(0.96) brightness(0.86);
+        }
+        .website-project-item:focus-visible { outline: 2px solid #e2bd62; outline-offset: -2px; }
+        .website-project-caption {
+            position: absolute;
+            z-index: 1;
+            right: 1.25rem;
+            bottom: 1.15rem;
+            left: 1.25rem;
+        }
+        .website-project-caption strong {
+            display: block;
+            font-size: clamp(0.95rem, 1.5vw, 1.25rem);
+            letter-spacing: 0;
+        }
+        .website-project-caption span {
+            display: block;
+            margin-top: 0.35rem;
+            color: rgba(242, 228, 194, 0.56);
+            font: 500 0.58rem/1.4 'Space Mono', monospace;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+        .website-project-close {
+            position: absolute;
+            top: clamp(1.25rem, 3vw, 2.5rem);
+            right: clamp(1.25rem, 3vw, 2.75rem);
+            z-index: 2;
+            display: grid;
+            width: 2.75rem;
+            height: 2.75rem;
+            place-items: center;
+            border: 1px solid rgba(247, 228, 181, 0.28);
+            border-radius: 50%;
+            color: #f8e8bd;
+            background: rgba(5, 14, 31, 0.42);
+            font-size: 1.35rem;
+            cursor: pointer;
+            transition: background 0.25s ease, transform 0.25s ease;
+        }
+        .website-project-close:hover { background: rgba(222, 184, 90, 0.16); transform: rotate(5deg); }
+        .website-project-close:active { transform: scale(0.96); }
+        .website-project-close:focus-visible { outline: 2px solid #e2bd62; outline-offset: 3px; }
         .starry-river::after {
             content: '';
             position: absolute;
             inset: 0;
+            z-index: 1;
             pointer-events: none;
             background:
                 radial-gradient(circle at 51% 69%, rgba(255, 184, 81, 0.08), transparent 28%),
@@ -317,31 +568,34 @@
         }
         .starry-experience.is-transitioning .starry-opening {
             opacity: 0;
-            transform: scale(1.16) translate3d(0, -3%, 0);
+            transform: scale(1.06) translate3d(0, -1.5%, 0);
             filter: brightness(0.58) blur(3px);
         }
         .starry-experience.is-transitioning .starry-splat-canvas {
             opacity: 0;
         }
-        .starry-experience.is-transitioning .starry-river,
+        .starry-experience.is-transitioning .starry-transition {
+            opacity: 1;
+            transform: scale(1);
+            filter: brightness(1) blur(0);
+            pointer-events: auto;
+        }
         .starry-experience.is-river .starry-river {
             opacity: 1;
-            transform: scale(1.02);
+            transform: scale(1);
             filter: brightness(1) blur(0);
+            pointer-events: auto;
         }
         .starry-experience.is-transitioning .starry-transition-title {
             opacity: 1;
             transform: translate3d(-50%, -50%, 0);
         }
         .starry-experience.is-river .starry-opening,
+        .starry-experience.is-river .starry-transition,
         .starry-experience.is-river .starry-transition-title,
         .starry-experience.is-river .starry-enter {
             visibility: hidden;
             opacity: 0;
-        }
-        @keyframes starry-breathe {
-            from { transform: scale(1.018) translate3d(0, 0, 0); }
-            to { transform: scale(1.045) translate3d(-0.35%, -0.3%, 0); }
         }
         @keyframes starry-hint-in {
             from { opacity: 0; transform: translateY(5px); }
@@ -356,19 +610,33 @@
             .starry-splat-canvas {
                 opacity: 0.5;
             }
+            .starry-transition-canvas {
+                opacity: 0.78;
+            }
+            .website-project-panel {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+                overflow: auto;
+                padding-top: 5.5rem;
+            }
+            .website-project-intro { align-self: end; }
+            .website-project-title { font-size: clamp(3rem, 17vw, 5.5rem); }
+            .website-project-list { align-self: start; overflow: visible; }
+        }
+        @media (max-width: 520px) {
+            .website-project-list { grid-template-columns: 1fr; }
+            .website-project-item { min-height: 15rem; }
         }
         @media (prefers-reduced-motion: reduce) {
             .starry-opening-video {
                 animation: none;
-            }
-            .starry-splat-canvas {
-                display: none;
             }
             .starry-experience.is-webgl-splat .starry-opening-video {
                 opacity: 1;
                 filter: none;
             }
             .starry-opening,
+            .starry-transition,
             .starry-river,
             .starry-transition-title {
                 transition-duration: 0.35s;
@@ -386,23 +654,68 @@
             <video
                 id="starry-opening-video"
                 class="starry-opening-video"
-                src="星月夜 0.3 慢速版.mp4"
-                poster="01 星月夜融合.png"
+                src="scenes/01-opening/星月夜-树影修正与月晕分速-5秒-4K-v007.mp4"
+                poster="scenes/01-opening/starry-v007-poster.jpg"
                 autoplay
                 muted
                 loop
                 playsinline
                 preload="auto"
             ></video>
+            <div id="starry-particle-safety" class="starry-particle-safety" aria-hidden="true"></div>
+            <canvas id="starry-fallback-canvas" class="starry-fallback-canvas" aria-hidden="true" hidden></canvas>
             <canvas id="starry-splat-canvas" class="starry-splat-canvas" aria-hidden="true"></canvas>
             <div class="starry-atmosphere" aria-hidden="true"></div>
+            <div class="starry-edge starry-edge-top" aria-hidden="true"></div>
+            <div class="starry-edge starry-edge-bottom" aria-hidden="true"></div>
             <button id="starry-enter" class="starry-enter" type="button" aria-label="Enter the Starry River">
                 <span class="starry-enter-hint">Click anywhere to enter</span>
             </button>
         </section>
 
-        <section class="starry-scene starry-river" aria-label="Temporary Starry River scene">
-            <img class="starry-river-image" src="Part 3.png" alt="A woman and a small white dog travelling by boat beneath a starry sky">
+        <section id="starry-transition-scene" class="starry-scene starry-transition" aria-label="River bank transition scene">
+            <img
+                id="starry-transition-image"
+                class="starry-transition-image"
+                src="scenes/02-transition/02 River Bank.png"
+                alt="A painted starry river bank at night"
+                decoding="async"
+            >
+            <canvas id="starry-transition-canvas" class="starry-transition-canvas" aria-hidden="true"></canvas>
+            <div class="starry-atmosphere" aria-hidden="true"></div>
+        </section>
+
+        <section id="starry-river-scene" class="starry-scene starry-river" aria-label="Interactive Starry River scene">
+            <img class="starry-river-image" src="scenes/03-river-Boating/01.jpg" alt="A woman and a small white dog travelling toward a painted riverside town beneath a starry sky">
+            <canvas id="starry-river-art-canvas" class="starry-river-art-canvas" aria-hidden="true"></canvas>
+            <canvas id="starry-river-canvas" class="starry-river-canvas" aria-hidden="true"></canvas>
+            <div class="river-vignette" aria-hidden="true"></div>
+            <section id="website-project-panel" class="website-project-panel" aria-labelledby="website-project-title" aria-hidden="true">
+                <button id="website-project-close" class="website-project-close" type="button" aria-label="Close website projects">&times;</button>
+                <div class="website-project-intro">
+                    <p class="website-project-kicker">AIGC constellation / 01</p>
+                    <h2 id="website-project-title" class="website-project-title">Web<br>sites</h2>
+                    <p class="website-project-copy">A growing archive of AI-native websites, agents and digital systems. Each project began as a small point of light and became something people can use.</p>
+                </div>
+                <div class="website-project-list">
+                    <a class="website-project-item" href="#projects" data-close-website-project>
+                        <img src="coze 客服系统.png" alt="AI customer service system interface" loading="lazy">
+                        <span class="website-project-caption"><strong>AI Service System</strong><span>Agent workflow / Coze</span></span>
+                    </a>
+                    <a class="website-project-item" href="#projects" data-close-website-project>
+                        <img src="coze标书系统.png" alt="AI proposal system interface" loading="lazy">
+                        <span class="website-project-caption"><strong>Proposal Copilot</strong><span>Knowledge system / RAG</span></span>
+                    </a>
+                    <a class="website-project-item" href="#projects" data-close-website-project>
+                        <img src="Saas插件 coze系统.png" alt="AI SaaS plugin system interface" loading="lazy">
+                        <span class="website-project-caption"><strong>SaaS Plugin Lab</strong><span>Product system / AIGC</span></span>
+                    </a>
+                    <a class="website-project-item" href="#projects" data-close-website-project>
+                        <img src="Girl dog 醒图PS版.jpg" alt="Painted portrait of a girl and her dog" loading="lazy">
+                        <span class="website-project-caption"><strong>More stars ahead</strong><span>Ongoing experiments</span></span>
+                    </a>
+                </div>
+            </section>
         </section>
 
         <p class="starry-transition-title">Enter My Starry River</p>
@@ -663,326 +976,38 @@ Into Castelfranco Town</h3>
     <footer class="py-20 text-center border-t border-zinc-900">
         <p class="text-[8px] text-zinc-800 tracking-[1em] uppercase">Xueying Wang &copy; 2024 / London</p>
     </footer>
+    <script src="scenes/01-opening/opening-fallback.js?v=20261028-framing"></script>
+    <script src="scenes/01-opening/01-opening.js?v=20261028-framing"></script>
+    <script src="scenes/02-transition/transition-scene.js"></script>
+    <script src="scenes/03-river-Boating/river-scene.js?v=20260907-three-rowing-1"></script>
     <script src="starry-opening.js"></script>
     <script>
-        (() => {
-            if (window.STARRY_SPLAT_WEBGL) return;
-            const experience = document.getElementById('starry-experience');
-            const openingVideo = document.getElementById('starry-opening-video');
-            const enterButton = document.getElementById('starry-enter');
-            const splatCanvas = document.getElementById('starry-splat-canvas');
-            const splatContext = splatCanvas.getContext('2d', { alpha: true });
-            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-
-            const scene = {
-                current: 'opening',
-                transitionTimer: null
-            };
-
-            const pointer = {
-                x: -1000,
-                y: -1000,
-                active: false,
-                radius: 190
-            };
-
-            const splats = {
-                items: [],
-                sprites: new Map(),
-                source: document.createElement('canvas'),
-                sourceReady: false,
-                animationFrame: null,
-                lastTime: 0,
-                width: 0,
-                height: 0,
-                dpr: 1
-            };
-
-            const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
-            const randomBetween = (min, max) => min + Math.random() * (max - min);
-
-            function setScene(nextScene) {
-                scene.current = nextScene;
-                experience.dataset.scene = nextScene;
-                experience.classList.toggle('is-transitioning', nextScene === 'transition');
-                experience.classList.toggle('is-river', nextScene === 'river');
-
-                if (nextScene === 'river') {
-                    stopSplatAnimation();
-                    openingVideo.pause();
-                }
-            }
-
-            function enterRiver() {
-                if (scene.current !== 'opening') return;
-
-                setScene('transition');
-                enterButton.disabled = true;
-                clearTimeout(scene.transitionTimer);
-                scene.transitionTimer = window.setTimeout(() => {
-                    setScene('river');
-                }, reduceMotion.matches ? 450 : 2800);
-            }
-
-            function resetOpening() {
-                clearTimeout(scene.transitionTimer);
-                setScene('opening');
-                enterButton.disabled = false;
-                openingVideo.currentTime = 0;
-                if (!reduceMotion.matches) {
-                    openingVideo.play().catch(() => {});
-                    startSplatAnimation();
-                }
-            }
-
-            function getCoverTransform(sourceWidth, sourceHeight) {
-                const scale = Math.max(splats.width / sourceWidth, splats.height / sourceHeight);
-                return {
-                    scale,
-                    offsetX: (splats.width - sourceWidth * scale) / 2,
-                    offsetY: (splats.height - sourceHeight * scale) / 2
-                };
-            }
-
-            function captureVideoFrame() {
-                if (!openingVideo.videoWidth || !openingVideo.videoHeight) return false;
-
-                splats.source.width = openingVideo.videoWidth;
-                splats.source.height = openingVideo.videoHeight;
-                const sourceContext = splats.source.getContext('2d', { willReadFrequently: true });
-                sourceContext.drawImage(openingVideo, 0, 0, splats.source.width, splats.source.height);
-                splats.sourceReady = true;
-                return true;
-            }
-
-            function loadPosterFallback() {
-                const poster = new Image();
-                poster.src = '01 星月夜融合.png';
-                poster.onload = () => {
-                    splats.source.width = poster.naturalWidth;
-                    splats.source.height = poster.naturalHeight;
-                    splats.source.getContext('2d', { willReadFrequently: true }).drawImage(poster, 0, 0);
-                    splats.sourceReady = true;
-                    buildSplats();
-                    startSplatAnimation();
-                };
-            }
-
-            function getSplatSprite(red, green, blue) {
-                const key = `${red >> 5}-${green >> 5}-${blue >> 5}`;
-                if (splats.sprites.has(key)) return splats.sprites.get(key);
-
-                const sprite = document.createElement('canvas');
-                sprite.width = 40;
-                sprite.height = 40;
-                const spriteContext = sprite.getContext('2d');
-                const gradient = spriteContext.createRadialGradient(20, 20, 0, 20, 20, 20);
-                gradient.addColorStop(0, `rgba(${red}, ${green}, ${blue}, 0.84)`);
-                gradient.addColorStop(0.34, `rgba(${red}, ${green}, ${blue}, 0.48)`);
-                gradient.addColorStop(0.72, `rgba(${red}, ${green}, ${blue}, 0.12)`);
-                gradient.addColorStop(1, `rgba(${red}, ${green}, ${blue}, 0)`);
-                spriteContext.fillStyle = gradient;
-                spriteContext.fillRect(0, 0, 40, 40);
-                splats.sprites.set(key, sprite);
-                return sprite;
-            }
-
-            function buildSplats() {
-                if (!splats.sourceReady || !splats.width || !splats.height) return;
-
-                const sourceContext = splats.source.getContext('2d', { willReadFrequently: true });
-                const sourceWidth = splats.source.width;
-                const sourceHeight = splats.source.height;
-                const pixels = sourceContext.getImageData(0, 0, sourceWidth, sourceHeight).data;
-                const transform = getCoverTransform(sourceWidth, sourceHeight);
-                const targetCount = clamp(Math.round((splats.width * splats.height) / 1800), 420, 1150);
-                const nextSplats = [];
-                let attempts = 0;
-
-                while (nextSplats.length < targetCount && attempts < targetCount * 12) {
-                    attempts += 1;
-                    const x = Math.random() * splats.width;
-                    const y = Math.random() * splats.height;
-                    const sourceX = Math.floor((x - transform.offsetX) / transform.scale);
-                    const sourceY = Math.floor((y - transform.offsetY) / transform.scale);
-
-                    if (sourceX < 0 || sourceX >= sourceWidth || sourceY < 0 || sourceY >= sourceHeight) continue;
-
-                    const pixelIndex = (sourceY * sourceWidth + sourceX) * 4;
-                    const red = pixels[pixelIndex];
-                    const green = pixels[pixelIndex + 1];
-                    const blue = pixels[pixelIndex + 2];
-                    const brightness = red * 0.24 + green * 0.58 + blue * 0.18;
-                    const sourceRatioY = sourceY / sourceHeight;
-                    const isSky = sourceRatioY < 0.66;
-                    const acceptance = isSky
-                        ? clamp((brightness - 34) / 110, 0.18, 0.9)
-                        : clamp((brightness - 42) / 160, 0.06, 0.3);
-
-                    if (Math.random() > acceptance) continue;
-
-                    const goldBias = red > blue * 1.05 && green > blue * 0.86;
-                    nextSplats.push({
-                        baseX: x,
-                        baseY: y,
-                        x,
-                        y,
-                        phase: Math.random() * Math.PI * 2,
-                        cursorAngle: 0,
-                        isSky,
-                        orbit: isSky ? randomBetween(1.6, 5.4) : randomBetween(0.5, 1.9),
-                        baseRotation: isSky ? 0.1 : 0.035,
-                        width: goldBias ? randomBetween(9, 20) : randomBetween(7, 16),
-                        height: goldBias ? randomBetween(3.2, 7) : randomBetween(2.4, 5.5),
-                        tilt: randomBetween(-0.7, 0.7),
-                        opacity: clamp(brightness / 225, 0.18, goldBias ? 0.72 : 0.5),
-                        sprite: getSplatSprite(red, green, blue)
-                    });
-                }
-
-                splats.items = nextSplats;
-            }
-
-            function resizeSplatCanvas() {
-                const bounds = experience.getBoundingClientRect();
-                splats.width = Math.max(1, bounds.width);
-                splats.height = Math.max(1, bounds.height);
-                splats.dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-                splatCanvas.width = Math.round(splats.width * splats.dpr);
-                splatCanvas.height = Math.round(splats.height * splats.dpr);
-                splatCanvas.style.width = `${splats.width}px`;
-                splatCanvas.style.height = `${splats.height}px`;
-                buildSplats();
-            }
-
-            function drawSplats(time) {
-                if (scene.current === 'river' || reduceMotion.matches || document.hidden) {
-                    splats.animationFrame = null;
-                    return;
-                }
-
-                const delta = clamp((time - (splats.lastTime || time)) / 16.67, 0.25, 2);
-                splats.lastTime = time;
-                splatContext.setTransform(splats.dpr, 0, 0, splats.dpr, 0, 0);
-                splatContext.clearRect(0, 0, splats.width, splats.height);
-                splatContext.globalCompositeOperation = 'screen';
-
-                for (const particle of splats.items) {
-                    particle.phase += particle.baseRotation * 0.0024 * delta;
-                    let x = particle.baseX + Math.cos(particle.phase) * particle.orbit;
-                    let y = particle.baseY + Math.sin(particle.phase) * particle.orbit * 0.56;
-
-                    const dx = x - pointer.x;
-                    const dy = y - pointer.y;
-                    const distance = Math.hypot(dx, dy);
-                    const influence = pointer.active && particle.isSky
-                        ? clamp(1 - distance / pointer.radius, 0, 1)
-                        : 0;
-
-                    if (influence > 0) {
-                        const rotationSpeed = (0.1 + (0.23 - 0.1) * influence) * 0.012 * delta;
-                        particle.cursorAngle += rotationSpeed;
-                        const angle = Math.atan2(dy, dx) + particle.cursorAngle;
-                        x = pointer.x + Math.cos(angle) * distance;
-                        y = pointer.y + Math.sin(angle) * distance;
-                    } else {
-                        particle.cursorAngle *= 0.94;
-                    }
-
-                    splatContext.save();
-                    splatContext.translate(x, y);
-                    splatContext.rotate(particle.tilt + particle.phase * 0.32);
-                    splatContext.globalAlpha = particle.opacity * (0.72 + influence * 0.28);
-                    splatContext.drawImage(
-                        particle.sprite,
-                        -particle.width,
-                        -particle.height,
-                        particle.width * 2,
-                        particle.height * 2
-                    );
-                    splatContext.restore();
-                }
-
-                splatContext.globalAlpha = 1;
-                splatContext.globalCompositeOperation = 'source-over';
-                splats.animationFrame = window.requestAnimationFrame(drawSplats);
-            }
-
-            function startSplatAnimation() {
-                if (reduceMotion.matches || splats.animationFrame || scene.current === 'river') return;
-                splats.lastTime = 0;
-                splats.animationFrame = window.requestAnimationFrame(drawSplats);
-            }
-
-            function stopSplatAnimation() {
-                if (!splats.animationFrame) return;
-                window.cancelAnimationFrame(splats.animationFrame);
-                splats.animationFrame = null;
-            }
-
-            experience.addEventListener('pointermove', (event) => {
-                const bounds = experience.getBoundingClientRect();
-                pointer.x = event.clientX - bounds.left;
-                pointer.y = event.clientY - bounds.top;
-                pointer.active = true;
-                pointer.radius = clamp(Math.min(bounds.width, bounds.height) * 0.2, 120, 220);
-            }, { passive: true });
-
-            experience.addEventListener('pointerleave', () => {
-                pointer.active = false;
-            });
-
-            enterButton.addEventListener('click', enterRiver);
-            window.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape' && scene.current !== 'opening') resetOpening();
-            });
-
-            let resizeFrame = null;
-            window.addEventListener('resize', () => {
-                if (resizeFrame) window.cancelAnimationFrame(resizeFrame);
-                resizeFrame = window.requestAnimationFrame(resizeSplatCanvas);
-            }, { passive: true });
-
-            reduceMotion.addEventListener('change', () => {
-                if (reduceMotion.matches) {
-                    openingVideo.pause();
-                    stopSplatAnimation();
-                } else if (scene.current === 'opening') {
-                    openingVideo.play().catch(() => {});
-                    startSplatAnimation();
-                }
-            });
-
-            openingVideo.addEventListener('loadeddata', () => {
-                if (captureVideoFrame()) {
-                    resizeSplatCanvas();
-                    startSplatAnimation();
-                }
-            }, { once: true });
-
-            openingVideo.addEventListener('error', () => {
-                loadPosterFallback();
-            }, { once: true });
-
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden) {
-                    stopSplatAnimation();
-                } else if (scene.current !== 'river') {
-                    startSplatAnimation();
-                }
-            });
-
-            resizeSplatCanvas();
-            if (reduceMotion.matches) {
-                openingVideo.pause();
-            } else {
-                openingVideo.play().catch(() => {});
-            }
-        })();
-    </script>
-    <script>
-        const apiKey = ""; 
+        const apiKey = "";
         const appId = 'portfolio-ai-xueying';
+        /*
+         * 之前这个函数被调用却从未定义，点「AI 点评」和聊天都会直接抛错。
+         * 先做成可降级：没有配置后端就给出提示，不再崩。
+         * 注意：不要把真实 API Key 写在这里——静态页面的源码任何人都能看到，
+         * 要接 AI 必须走一层自己的后端代理。
+         */
+        async function callGemini(prompt, systemPrompt) {
+            if (!apiKey) {
+                return 'AI 助手尚未接入后端，暂时无法回复。';
+            }
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, systemPrompt, appId })
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const payload = await response.json();
+                return payload.text || '没有收到有效回复。';
+            } catch (error) {
+                console.warn('AI 请求失败：', error);
+                return 'AI 请求失败，请稍后再试。';
+            }
+        }
         // --- 1. 粒子河流逻辑 (调平曲线) ---
         const canvas = document.getElementById('particle-canvas');
         const ctx = canvas.getContext('2d');
@@ -1099,8 +1124,15 @@ Into Castelfranco Town</h3>
             mouse.x = e.clientX - r.left;
             mouse.y = e.clientY - r.top;
         });
-        if (!document.body.classList.contains('starry-lock')) initParticles();
+        let particlesStarted = false;
+        function startParticlesOnce() {
+            if (particlesStarted) return;
+            particlesStarted = true;
+            initParticles();
+        }
+        // 开场层锁着页面时不跑，解锁后再启动，避免白跑一套动画
+        window.addEventListener('starry:unlocked', startParticlesOnce);
+        if (!document.body.classList.contains('starry-lock')) startParticlesOnce();
     </script>
-    <script type="module" src="/index.tsx"></script>
 </body>
 </html>

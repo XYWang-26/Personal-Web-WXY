@@ -1,0 +1,5 @@
+.studio-intent-loader {
+  display: block;
+  flex: 0 0 auto;
+  color: var(--webis-accent-text);
+}

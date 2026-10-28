@@ -1,0 +1,18 @@
+{
+  "savedAt": "2026-08-28T17:04:34+08:00",
+  "sourceProject": "E:/A - Webis/01 Webis-Frontend-New",
+  "sourceHead": "8cf9e79f0009a679882945e027d424bf00c38f44",
+  "snapshotType": "working-tree-files-including-uncommitted-changes",
+  "algorithm": "SHA256",
+  "files": [
+    { "path": "README.md", "sha256": "5F748D88A2399338963B1C5F8E3E9C240A25262EDFFBED20A37FED969671F950", "bytes": 4397 },
+    { "path": "preview/webis-breathing-preview.gif", "sha256": "CEBE6738AB26077B9A2565660A11A3DA22C1C4CAA263037C0577CC8EE5AED420", "bytes": 285552 },
+    { "path": "reference/package.json", "sha256": "6128B633CD52228B360808E8A7B87101D205B36F7C94F87B6F5077AE911090E9", "bytes": 1041 },
+    { "path": "reference/WEBIS_DESIGN_TOKENS.css", "sha256": "C546E6C0C9581F1ECB98FF4F5DDD544F1EFACF809D3B7F4D2F898BDE75C66385", "bytes": 2038 },
+    { "path": "src/breathingOrb.test.ts", "sha256": "5BC5CFCF201492BBBC6B87C1E6E548783A802171F2C7F75A7811233FDC16E20C", "bytes": 2235 },
+    { "path": "src/breathingOrb.ts", "sha256": "8F90E8CF448ED3E92FF5215FEB6F6B79EECDC79BE5483A9C80200CAB97A8A87D", "bytes": 4185 },
+    { "path": "src/studio-intent-loader.css", "sha256": "CC26612C5A7B66BD90A17EB5EC13D4BDBA6D7CAA346EBA46A8E269BBDA96353C", "bytes": 97 },
+    { "path": "src/StudioIntentLoader.test.tsx", "sha256": "F89DD9F3038E6AB060A19EAF4BF6F8B2B0421DDDCDD5E5FD702E128B4AB166B1", "bytes": 4202 },
+    { "path": "src/StudioIntentLoader.tsx", "sha256": "BD001B95E3CF67C418F8B9C3BEC57F0E9E82B34E729F01A8AF5510FD3FCBBDED", "bytes": 2559 }
+  ]
+}

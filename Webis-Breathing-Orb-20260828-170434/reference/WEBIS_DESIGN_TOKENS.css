@@ -1,0 +1,53 @@
+:root {
+  --webis-paper: #f3f1eb;
+  --webis-surface-raised: #fbfaf7;
+  --webis-ink: #0a0a09;
+  --webis-ink-soft: #111311;
+  --webis-line: #f4f4ef;
+  --webis-muted: #75736d;
+  --webis-accent-primary: #8e9b4f;
+  --webis-accent-secondary: #9fab61;
+  --webis-accent-text: var(--webis-accent-primary);
+  --webis-accent-surface: var(--webis-accent-secondary);
+  --webis-control-accent: #9fab61;
+  --webis-control-accent-ink: #56602e;
+  --webis-control-accent-border: rgb(159 171 97 / 70%);
+  --webis-control-accent-soft: rgb(159 171 97 / 18%);
+  --webis-control-accent-ring: rgb(159 171 97 / 12%);
+  --webis-wood: #ad936e;
+  /* Quiet paper grain for large background and authored scene surfaces only. */
+  --webis-paper-texture-image: url("/textures/paper-texture.jpg");
+  --webis-paper-texture-opacity: 0;
+  --webis-paper-texture-blend-mode: multiply;
+  --webis-paper-texture-size: 400px auto;
+  --webis-border-dark: rgb(244 244 239 / 14%);
+  --webis-border-light: rgb(10 10 9 / 14%);
+  --webis-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --webis-conversation-bottom-inset: 20px;
+  /* Every button keeps this small radius; 0px sharp corners are not allowed. */
+  --webis-radius-control: 10px;
+  --font-en: Inter, "Inter Variable", "Segoe UI Variable", "Segoe UI", sans-serif;
+  --font-zh: "Noto Sans SC", sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+
+  /* Shared semantic title scale. Body, control, label, and caption sizes stay unchanged. */
+  --webis-type-display: 56px;
+  --webis-type-hero: 44px;
+  --webis-type-page-title: 32px;
+  --webis-type-section-title: 24px;
+  --webis-type-panel-title: 20px;
+  --webis-type-item-title: 18px;
+  --webis-type-subtitle: 13px;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --webis-type-display: 40px;
+    --webis-type-hero: 34px;
+    --webis-type-page-title: 28px;
+    --webis-type-section-title: 22px;
+    --webis-type-panel-title: 18px;
+    --webis-type-item-title: 16px;
+    --webis-type-subtitle: 13px;
+  }
+}
