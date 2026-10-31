@@ -31,3 +31,13 @@
 .adit/
 .claude/
 debug.log
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
+
+# Generated Cloudflare website assets
+.cloudflare-dist/
